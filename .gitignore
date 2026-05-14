@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+*.egg-info/
+
+# rembg model cache
+.u2net/
+
+# Node
+node_modules/
+dist/
+.DS_Store
+
+# Temp
+*.tmp

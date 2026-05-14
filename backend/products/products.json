@@ -1,0 +1,62 @@
+[
+  {
+    "id": "ust-001",
+    "name": "Chambray Noktalı Gömlek",
+    "category": "ust",
+    "subcategory": "gomlek",
+    "image": "ust/gomlek-zara.jpg",
+    "description": "light blue chambray shirt with white dot pattern and collar",
+    "sizes": ["XS", "S", "M", "L", "XL"],
+    "price": 599
+  },
+  {
+    "id": "ust-002",
+    "name": "Siyah Crop Sweatshirt",
+    "category": "ust",
+    "subcategory": "sweatshirt",
+    "image": "ust/sweatshirt-black.jpg",
+    "description": "black crop sweatshirt",
+    "sizes": ["XS", "S", "M", "L", "XL"],
+    "price": 449
+  },
+  {
+    "id": "ust-003",
+    "name": "Lacivert Triko Kazak",
+    "category": "ust",
+    "subcategory": "kazak",
+    "image": "ust/knit-navy.jpg",
+    "description": "navy blue knit sweater",
+    "sizes": ["S", "M", "L", "XL"],
+    "price": 699
+  },
+  {
+    "id": "alt-001",
+    "name": "Siyah Slim Fit Pantolon",
+    "category": "alt",
+    "subcategory": "pantolon",
+    "image": "alt/pants-black.jpg",
+    "description": "black slim fit trousers",
+    "sizes": ["34", "36", "38", "40", "42"],
+    "price": 549
+  },
+  {
+    "id": "alt-002",
+    "name": "Bej Keten Pantolon",
+    "category": "alt",
+    "subcategory": "pantolon",
+    "image": "alt/pants-beige.jpg",
+    "description": "beige linen trousers",
+    "sizes": ["34", "36", "38", "40", "42"],
+    "price": 499
+  },
+  {
+    "id": "alt-003",
+    "name": "Midi Çiçekli Etek",
+    "category": "alt",
+    "subcategory": "etek",
+    "image": "alt/skirt-floral.jpg",
+    "description": "floral print midi skirt",
+    "sizes": ["XS", "S", "M", "L", "XL"],
+    "price": 399
+  }
+]

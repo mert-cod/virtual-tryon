@@ -1,0 +1,9 @@
+fastapi==0.115.5
+uvicorn==0.32.1
+python-multipart==0.0.12
+opencv-python==4.10.0.84
+rembg>=2.0.62
+replicate==1.0.4
+Pillow==11.0.0
+numpy==2.1.3
+python-dotenv==1.0.1
