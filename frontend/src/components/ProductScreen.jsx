@@ -20,43 +20,31 @@ const SUBCATEGORIES = {
   ],
 }
 
-// Standart beden önerisi (BMI tabanlı)
 const TOP_SIZES    = ['XS', 'S', 'M', 'L', 'XL']
 const BOTTOM_SIZES = ['34', '36', '38', '40', '42']
 
-function recommendSize(height, weight, category) {
-  if (!height || !weight) return null
-  const bmi = weight / ((height / 100) ** 2)
-  if (category === 'alt') {
-    if (bmi < 18.5) return '34'
-    if (bmi < 21)   return '36'
-    if (bmi < 23.5) return '38'
-    if (bmi < 26)   return '40'
-    return '42'
-  }
-  if (bmi < 18.5) return 'XS'
-  if (bmi < 21)   return 'S'
-  if (bmi < 23.5) return 'M'
-  if (bmi < 26)   return 'L'
-  return 'XL'
-}
-
 function sizeDiff(selected, recommended, category) {
   const arr = category === 'alt' ? BOTTOM_SIZES : TOP_SIZES
+  // negatif = seçilen daha küçük = dar  /  pozitif = seçilen daha büyük = bol
   return arr.indexOf(selected) - arr.indexOf(recommended)
 }
 
-export default function ProductScreen({ brand, products = [], selectedProduct, selectedSize, onSelectProduct, onSelectSize, onTryOn, onBack }) {
+export default function ProductScreen({ brand, products = [], photo, selectedProduct, selectedSize, onSelectProduct, onSelectSize, onTryOn, onBack }) {
   const [category, setCategory] = useState('ust')
   const [subcategory, setSubcategory] = useState('all')
   const [height, setHeight] = useState('')
   const [weight, setWeight] = useState('')
+  const [analyzing, setAnalyzing] = useState(false)
+  const [aiRecommended, setAiRecommended] = useState(null)
+  const [aiReason, setAiReason] = useState(null)
 
   function changeCategory(key) {
     setCategory(key)
     setSubcategory('all')
     onSelectProduct(null)
     onSelectSize(null)
+    setAiRecommended(null)
+    setAiReason(null)
   }
 
   function changeSubcategory(key) {
@@ -65,23 +53,66 @@ export default function ProductScreen({ brand, products = [], selectedProduct, s
     onSelectSize(null)
   }
 
+  async function analyzeBody() {
+    if (!photo) return
+    setAnalyzing(true)
+    setAiRecommended(null)
+    setAiReason(null)
+    try {
+      // photo bir blob URL veya data URL olabilir
+      let base64 = photo
+      let imageType = 'image/jpeg'
+      if (photo.startsWith('blob:')) {
+        const blob = await fetch(photo).then(r => r.blob())
+        imageType = blob.type || 'image/jpeg'
+        base64 = await new Promise(resolve => {
+          const reader = new FileReader()
+          reader.onload = e => resolve(e.target.result.split(',')[1])
+          reader.readAsDataURL(blob)
+        })
+      } else if (photo.startsWith('data:')) {
+        const parts = photo.split(',')
+        imageType = parts[0].match(/:(.*?);/)[1]
+        base64 = parts[1]
+      }
+
+      const res = await fetch('/api/analyze-body', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageBase64: base64,
+          imageType,
+          category: selectedProduct?.category || category,
+        }),
+      })
+      const data = await res.json()
+      if (data.size) {
+        setAiRecommended(data.size)
+        setAiReason(data.reason)
+      }
+    } catch (e) {
+      setAiReason('Analiz yapılamadı.')
+    }
+    setAnalyzing(false)
+  }
+
   const filtered = products.filter(p => {
     if (p.category !== category) return false
     if (subcategory === 'all') return true
     return p.subcategory === subcategory
   })
 
-  const h = parseFloat(height)
-  const w = parseFloat(weight)
-  const recommended = selectedProduct ? recommendSize(h, w, selectedProduct.category) : null
-  const diff = selectedSize && recommended ? sizeDiff(selectedSize, recommended, selectedProduct.category) : 0
+  const recommended = aiRecommended
+  const diff = selectedSize && recommended && selectedProduct
+    ? sizeDiff(selectedSize, recommended, selectedProduct.category)
+    : null
 
   let fitWarning = null
-  if (selectedSize && recommended) {
-    if (diff >= 2) fitWarning = { text: 'Bu beden sana çok dar kalabilir. Yapay zeka kıyafeti vücuduna sıkışmış gösterecek.', color: '#c0392b' }
-    else if (diff === 1) fitWarning = { text: 'Bu beden biraz dar olabilir. Önerilen beden: ' + recommended, color: '#e67e22' }
-    else if (diff === -1) fitWarning = { text: 'Bu beden biraz bol olabilir. Önerilen beden: ' + recommended, color: '#7f8c8d' }
-    else if (diff <= -2) fitWarning = { text: 'Bu beden sana çok bol kalabilir.', color: '#7f8c8d' }
+  if (diff !== null) {
+    if (diff <= -2)      fitWarning = { text: 'Bu beden sana çok dar kalacak. Yapay zeka bunu gösterecek.', color: '#c0392b' }
+    else if (diff === -1) fitWarning = { text: `Bu beden biraz dar olabilir. Önerilen: ${recommended}`, color: '#e67e22' }
+    else if (diff === 1)  fitWarning = { text: `Bu beden biraz bol olabilir. Önerilen: ${recommended}`, color: '#7f8c8d' }
+    else if (diff >= 2)   fitWarning = { text: 'Bu beden sana çok bol kalacak.', color: '#7f8c8d' }
   }
 
   const canTryOn = selectedProduct && selectedSize
@@ -107,19 +138,14 @@ export default function ProductScreen({ brand, products = [], selectedProduct, s
               ))}
             </div>
           </div>
-
           <div className="subcategory-bar">
             {SUBCATEGORIES[category].map(s => (
-              <button
-                key={s.key}
-                className={`subcategory-btn ${subcategory === s.key ? 'active' : ''}`}
-                onClick={() => changeSubcategory(s.key)}
-              >
+              <button key={s.key} className={`subcategory-btn ${subcategory === s.key ? 'active' : ''}`}
+                onClick={() => changeSubcategory(s.key)}>
                 {s.label}
               </button>
             ))}
           </div>
-
           {filtered.length === 0 ? (
             <div style={{ textAlign: 'center', paddingTop: 60, color: 'var(--gray)' }}>
               <p style={{ fontSize: 14 }}>Bu kategoride henüz ürün yok.</p>
@@ -140,33 +166,36 @@ export default function ProductScreen({ brand, products = [], selectedProduct, s
           )}
         </div>
 
-        {/* Sağ — seçim paneli */}
+        {/* Sağ — panel */}
         <div className="product-panel">
-          {/* Boy / Kilo */}
-          <div style={{ marginBottom: 20 }}>
+          {/* Ölçü + AI Analiz */}
+          <div style={{ marginBottom: 16 }}>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gray)', marginBottom: 10 }}>Ölçülerin</p>
-            <div style={{ display: 'flex', gap: 8 }}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
               <div style={{ flex: 1 }}>
                 <label style={{ fontSize: 11, color: 'var(--gray)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Boy (cm)</label>
-                <input
-                  type="number"
-                  placeholder="170"
-                  value={height}
-                  onChange={e => setHeight(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 14, fontWeight: 600, outline: 'none', boxSizing: 'border-box', background: 'var(--cream)' }}
-                />
+                <input type="number" placeholder="170" value={height} onChange={e => setHeight(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 14, fontWeight: 600, outline: 'none', boxSizing: 'border-box', background: 'var(--cream)' }} />
               </div>
               <div style={{ flex: 1 }}>
                 <label style={{ fontSize: 11, color: 'var(--gray)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Kilo (kg)</label>
-                <input
-                  type="number"
-                  placeholder="70"
-                  value={weight}
-                  onChange={e => setWeight(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 14, fontWeight: 600, outline: 'none', boxSizing: 'border-box', background: 'var(--cream)' }}
-                />
+                <input type="number" placeholder="70" value={weight} onChange={e => setWeight(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 14, fontWeight: 600, outline: 'none', boxSizing: 'border-box', background: 'var(--cream)' }} />
               </div>
             </div>
+            <button
+              onClick={analyzeBody}
+              disabled={analyzing || !photo}
+              style={{ width: '100%', padding: '10px', borderRadius: 10, border: '1.5px solid var(--black)', background: 'transparent', fontSize: 13, fontWeight: 700, cursor: analyzing ? 'wait' : 'pointer', color: 'var(--black)' }}
+            >
+              {analyzing ? 'Vücut analiz ediliyor...' : 'Vücudumu AI ile Analiz Et'}
+            </button>
+            {aiRecommended && (
+              <div style={{ marginTop: 8, padding: '10px 14px', borderRadius: 10, background: 'var(--cream)', border: '1px solid var(--border)' }}>
+                <p style={{ fontSize: 12, fontWeight: 700, marginBottom: 2 }}>AI Önerisi: <span style={{ color: 'var(--black)' }}>{aiRecommended}</span></p>
+                {aiReason && <p style={{ fontSize: 11, color: 'var(--gray)', lineHeight: 1.5 }}>{aiReason}</p>}
+              </div>
+            )}
           </div>
 
           {selectedProduct ? (
@@ -174,35 +203,31 @@ export default function ProductScreen({ brand, products = [], selectedProduct, s
               <div>
                 <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gray)', marginBottom: 8 }}>Seçilen Ürün</p>
                 <h2 style={{ fontSize: 20, fontWeight: 900, marginBottom: 4 }}>{selectedProduct.name}</h2>
-                <p style={{ fontSize: 18, color: 'var(--black)', fontWeight: 700, marginBottom: 16 }}>{selectedProduct.price} ₺</p>
+                <p style={{ fontSize: 18, fontWeight: 700, marginBottom: 16 }}>{selectedProduct.price} ₺</p>
               </div>
-
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                   <span className="size-label" style={{ margin: 0 }}>Beden Seç</span>
                   {recommended && (
                     <span style={{ fontSize: 11, color: 'var(--gray)', fontWeight: 600 }}>
-                      Önerilen: <strong style={{ color: 'var(--black)' }}>{recommended}</strong>
+                      AI önerisi: <strong style={{ color: 'var(--black)' }}>{recommended}</strong>
                     </span>
                   )}
                 </div>
                 <div className="size-row">
                   {selectedProduct.sizes.map(s => (
-                    <button
-                      key={s}
-                      className={`size-btn ${selectedSize === s ? 'active' : ''}`}
+                    <button key={s} className={`size-btn ${selectedSize === s ? 'active' : ''}`}
                       onClick={() => onSelectSize(s)}
-                      style={recommended === s && selectedSize !== s ? { borderColor: 'var(--black)', borderWidth: 2 } : {}}
-                    >
+                      style={recommended === s && selectedSize !== s ? { borderColor: 'var(--black)', borderWidth: 2 } : {}}>
                       {s}
-                      {recommended === s && <span style={{ display: 'block', fontSize: 8, marginTop: 1, color: selectedSize === s ? 'inherit' : 'var(--gray)' }}>önerilen</span>}
+                      {recommended === s && <span style={{ display: 'block', fontSize: 8, marginTop: 1, color: selectedSize === s ? 'inherit' : 'var(--gray)' }}>AI önerisi</span>}
                     </button>
                   ))}
                 </div>
               </div>
 
               {fitWarning && (
-                <div style={{ padding: '10px 14px', borderRadius: 10, background: fitWarning.color + '15', border: `1px solid ${fitWarning.color}40`, marginTop: 4 }}>
+                <div style={{ padding: '10px 14px', borderRadius: 10, background: fitWarning.color + '15', border: `1px solid ${fitWarning.color}40`, marginTop: 8 }}>
                   <p style={{ fontSize: 12, color: fitWarning.color, lineHeight: 1.5, fontWeight: 600 }}>{fitWarning.text}</p>
                 </div>
               )}

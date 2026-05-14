@@ -90,6 +90,7 @@ export default function App() {
       <ProductScreen
         brand={BRAND}
         products={PRODUCTS}
+        photo={photoDataUrl}
         selectedProduct={selectedProduct}
         selectedSize={selectedSize}
         onSelectProduct={setSelectedProduct}
