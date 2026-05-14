@@ -76,7 +76,7 @@ async def try_on(
         loop = asyncio.get_event_loop()
         result_b64 = await loop.run_in_executor(
             executor,
-            lambda: _tryon(person_tmp, str(garment_path))
+            lambda: _tryon(person_tmp, str(garment_path), product.get("category", "ust"))
         )
         return {"result_url": result_b64}
 
@@ -89,20 +89,23 @@ async def try_on(
             pass
 
 
-def _tryon(person_path: str, garment_path: str) -> str:
+def _tryon(person_path: str, garment_path: str, category: str = "ust") -> str:
     import fal_client
     import urllib.request
 
     os.environ["FAL_KEY"] = "b91cafa6-f676-4a98-8df1-b3be050540b1:574d85964a9abec22c0aa2ecd3951396"
 
+    cat = "bottoms" if category == "alt" else "tops"
+
     human_url = fal_client.upload_file(person_path)
     garment_url = fal_client.upload_file(garment_path)
 
     result = fal_client.subscribe(
-        "fal-ai/kling/v1-5/kolors-virtual-try-on",
+        "fal-ai/fashn/v1/try-on",
         arguments={
-            "human_image_url": human_url,
-            "garment_image_url": garment_url,
+            "model_image": human_url,
+            "garment_image": garment_url,
+            "category": cat,
         }
     )
 

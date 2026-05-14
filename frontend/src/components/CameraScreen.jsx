@@ -2,8 +2,6 @@ import { useRef, useEffect, useState } from 'react'
 
 const STEPS = [
   { key: 'front', label: 'Önden' },
-  { key: 'back',  label: 'Arkadan' },
-  { key: 'side',  label: 'Yandan' },
 ]
 
 export default function CameraScreen({ brand, onComplete, onBack }) {
@@ -92,8 +90,6 @@ export default function CameraScreen({ brand, onComplete, onBack }) {
 
   const hints = [
     'Kameraya düz bak, kollarını hafifçe aç',
-    'Kameraya sırtını dön, dik dur',
-    'Sağ yanını kameraya ver, dik dur',
   ]
 
   return (
