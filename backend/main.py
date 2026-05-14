@@ -14,7 +14,6 @@ import numpy as np
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from PIL import Image
 
 app = FastAPI()
 
@@ -53,11 +52,10 @@ async def process_photo(photo: UploadFile = File(...)):
         raise HTTPException(status_code=400, detail="Geçersiz görsel")
 
     img = _crop_head(img)
-    img = _remove_background(img)
 
-    _, buffer = cv2.imencode(".png", img)
+    _, buffer = cv2.imencode(".jpg", img)
     b64 = base64.b64encode(buffer).decode()
-    return {"processed_image": f"data:image/png;base64,{b64}"}
+    return {"processed_image": f"data:image/jpeg;base64,{b64}"}
 
 
 @app.post("/api/try-on")
@@ -146,13 +144,3 @@ def _crop_head(img: np.ndarray) -> np.ndarray:
     return result
 
 
-def _remove_background(img: np.ndarray) -> np.ndarray:
-    from rembg import remove
-
-    pil_img = Image.fromarray(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-    output = remove(pil_img)
-
-    bg = Image.new("RGBA", output.size, (255, 255, 255, 255))
-    bg.paste(output, mask=output.split()[3])
-
-    return cv2.cvtColor(np.array(bg.convert("RGB")), cv2.COLOR_RGB2BGR)
