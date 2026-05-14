@@ -1,0 +1,58 @@
+const BASE = ''
+
+export default [
+  {
+    id: 'ust-001',
+    name: 'Chambray Noktalı Gömlek',
+    category: 'ust',
+    subcategory: 'gomlek',
+    image: `${BASE}/products/ust/gomlek-zara.jpg`,
+    sizes: ['XS', 'S', 'M', 'L', 'XL'],
+    price: 599,
+  },
+  {
+    id: 'ust-002',
+    name: 'Siyah Crop Sweatshirt',
+    category: 'ust',
+    subcategory: 'sweatshirt',
+    image: `${BASE}/products/ust/sweatshirt-black.jpg`,
+    sizes: ['XS', 'S', 'M', 'L', 'XL'],
+    price: 449,
+  },
+  {
+    id: 'ust-003',
+    name: 'Lacivert Triko Kazak',
+    category: 'ust',
+    subcategory: 'kazak',
+    image: `${BASE}/products/ust/knit-navy.jpg`,
+    sizes: ['S', 'M', 'L', 'XL'],
+    price: 699,
+  },
+  {
+    id: 'alt-001',
+    name: 'Siyah Slim Fit Pantolon',
+    category: 'alt',
+    subcategory: 'pantolon',
+    image: `${BASE}/products/alt/pants-black.jpg`,
+    sizes: ['34', '36', '38', '40', '42'],
+    price: 549,
+  },
+  {
+    id: 'alt-002',
+    name: 'Bej Keten Pantolon',
+    category: 'alt',
+    subcategory: 'pantolon',
+    image: `${BASE}/products/alt/pants-beige.jpg`,
+    sizes: ['34', '36', '38', '40', '42'],
+    price: 499,
+  },
+  {
+    id: 'alt-003',
+    name: 'Midi Çiçekli Etek',
+    category: 'alt',
+    subcategory: 'etek',
+    image: `${BASE}/products/alt/skirt-floral.jpg`,
+    sizes: ['XS', 'S', 'M', 'L', 'XL'],
+    price: 399,
+  },
+]

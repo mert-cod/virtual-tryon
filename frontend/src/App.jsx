@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { fal } from '@fal-ai/client'
 import './index.css'
 import GuidanceScreen from './components/GuidanceScreen'
 import CameraScreen from './components/CameraScreen'
@@ -7,82 +8,58 @@ import ProductScreen from './components/ProductScreen'
 import LoadingScreen from './components/LoadingScreen'
 import ResultScreen from './components/ResultScreen'
 import ErrorScreen from './components/ErrorScreen'
+import PRODUCTS from './products'
 
 const BRAND = 'MARKA'
-const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+
+fal.config({ credentials: import.meta.env.VITE_FAL_KEY })
 
 export default function App() {
   const [screen, setScreen] = useState('guidance')
-  const [capturedPhoto, setCapturedPhoto] = useState(null)
-  const [processedPhoto, setProcessedPhoto] = useState(null)
+  const [photoBlob, setPhotoBlob] = useState(null)
+  const [photoDataUrl, setPhotoDataUrl] = useState(null)
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [selectedSize, setSelectedSize] = useState(null)
   const [resultUrl, setResultUrl] = useState(null)
   const [error, setError] = useState(null)
 
-  async function processPhoto(blob) {
-    setScreen('loading-photo')
-    setError(null)
-    try {
-      const form = new FormData()
-      form.append('photo', blob, 'photo.jpg')
-      const controller = new AbortController()
-      const tid = setTimeout(() => controller.abort(), 60000)
-      const res = await fetch(`${API}/api/process-photo`, { method: 'POST', body: form, signal: controller.signal })
-      clearTimeout(tid)
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.detail || `Sunucu hatası (${res.status})`)
-      }
-      const data = await res.json()
-      setProcessedPhoto(data.processed_image)
-      setScreen('preview')
-    } catch (e) {
-      const msg = e.name === 'AbortError' ? 'İşlem zaman aşımına uğradı.' : e.message
-      setError(msg)
-      setScreen('photo-error')
-    }
-  }
-
-  function handlePhotoCaptured(photoBlobs) {
-    const blob = photoBlobs[0]
-    setCapturedPhoto(blob)
-    processPhoto(blob)
+  function handlePhotoCaptured(photos) {
+    const blob = photos[0]
+    setPhotoBlob(blob)
+    const url = URL.createObjectURL(blob)
+    setPhotoDataUrl(url)
+    setScreen('preview')
   }
 
   async function handleTryOn() {
     setScreen('loading-tryon')
     setError(null)
     try {
-      const form = new FormData()
-      form.append('person_image', processedPhoto)
-      form.append('product_id', selectedProduct.id)
-      form.append('size', selectedSize)
-      form.append('category', selectedProduct.category)
+      const cat = selectedProduct.category === 'alt' ? 'bottoms' : 'tops'
+      const garmentUrl = window.location.origin + selectedProduct.image
 
-      const controller = new AbortController()
-      const tid = setTimeout(() => controller.abort(), 120000)
-      const res = await fetch(`${API}/api/try-on`, { method: 'POST', body: form, signal: controller.signal })
-      clearTimeout(tid)
+      const personUrl = await fal.storage.upload(photoBlob)
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.detail || `Sunucu hatası (${res.status})`)
-      }
-      const data = await res.json()
-      setResultUrl(data.result_url)
+      const result = await fal.subscribe('fal-ai/fashn/v1/try-on', {
+        input: {
+          model_image: personUrl,
+          garment_image: garmentUrl,
+          category: cat,
+        },
+      })
+
+      setResultUrl(result.data.images[0].url)
       setScreen('result')
     } catch (e) {
-      const msg = e.name === 'AbortError' ? 'Giydirme zaman aşımına uğradı. Tekrar dene.' : e.message
-      setError(msg)
+      setError(e.message || 'Bir hata oluştu.')
       setScreen('tryon-error')
     }
   }
 
   function reset() {
     setScreen('guidance')
-    setCapturedPhoto(null)
-    setProcessedPhoto(null)
+    setPhotoBlob(null)
+    setPhotoDataUrl(null)
     setSelectedProduct(null)
     setSelectedSize(null)
     setResultUrl(null)
@@ -100,32 +77,19 @@ export default function App() {
       />
     ),
 
-    'loading-photo': <LoadingScreen message="Fotoğraf işleniyor..." subtext="Biraz bekle." />,
-
-    'photo-error': (
-      <ErrorScreen
-        brand={BRAND}
-        message={error}
-        primaryLabel="Tekrar Dene"
-        onPrimary={() => processPhoto(capturedPhoto)}
-        secondaryLabel="Fotoğrafı Yenile"
-        onSecondary={() => { setCapturedPhoto(null); setScreen('camera') }}
-      />
-    ),
-
     preview: (
       <PreviewScreen
         brand={BRAND}
-        photo={processedPhoto}
+        photo={photoDataUrl}
         onConfirm={() => setScreen('products')}
-        onRetake={() => { setCapturedPhoto(null); setScreen('camera') }}
+        onRetake={() => { setPhotoBlob(null); setPhotoDataUrl(null); setScreen('camera') }}
       />
     ),
 
     products: (
       <ProductScreen
         brand={BRAND}
-        error={error}
+        products={PRODUCTS}
         selectedProduct={selectedProduct}
         selectedSize={selectedSize}
         onSelectProduct={setSelectedProduct}

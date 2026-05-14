@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 
 const SUBCATEGORIES = {
   ust: [
@@ -20,18 +20,9 @@ const SUBCATEGORIES = {
   ],
 }
 
-export default function ProductScreen({ brand, error, selectedProduct, selectedSize, onSelectProduct, onSelectSize, onTryOn, onBack }) {
-  const [products, setProducts] = useState([])
+export default function ProductScreen({ brand, products = [], selectedProduct, selectedSize, onSelectProduct, onSelectSize, onTryOn, onBack }) {
   const [category, setCategory] = useState('ust')
   const [subcategory, setSubcategory] = useState('all')
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    fetch((import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api/products')
-      .then(r => r.json())
-      .then(data => { setProducts(data); setLoading(false) })
-      .catch(() => setLoading(false))
-  }, [])
 
   function changeCategory(key) {
     setCategory(key)
@@ -64,7 +55,6 @@ export default function ProductScreen({ brand, error, selectedProduct, selectedS
       <div className="product-layout">
         {/* Sol — ürün grid */}
         <div className="product-grid-area">
-          {error && <div className="inline-error">{error}</div>}
 
           {/* Üst / Alt sekmeler */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
@@ -92,9 +82,7 @@ export default function ProductScreen({ brand, error, selectedProduct, selectedS
             ))}
           </div>
 
-          {loading ? (
-            <p style={{ color: 'var(--gray)', fontSize: 14 }}>Yükleniyor...</p>
-          ) : filtered.length === 0 ? (
+          {filtered.length === 0 ? (
             <div style={{ textAlign: 'center', paddingTop: 60, color: 'var(--gray)' }}>
               <p style={{ fontSize: 14 }}>Bu kategoride henüz ürün yok.</p>
             </div>
@@ -103,7 +91,7 @@ export default function ProductScreen({ brand, error, selectedProduct, selectedS
               {filtered.map(p => (
                 <div key={p.id} className={`product-card ${selectedProduct?.id === p.id ? 'selected' : ''}`}
                   onClick={() => { onSelectProduct(p); onSelectSize(null) }}>
-                  <ProductImage src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/products/${p.image}`} alt={p.name} />
+                  <ProductImage src={p.image} alt={p.name} />
                   <div className="product-card-info">
                     <h4>{p.name}</h4>
                     <span>{p.price} ₺</span>
