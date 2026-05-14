@@ -9,7 +9,7 @@ import ResultScreen from './components/ResultScreen'
 import ErrorScreen from './components/ErrorScreen'
 
 const BRAND = 'MARKA'
-const API = 'http://localhost:8000'
+const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 
 export default function App() {
   const [screen, setScreen] = useState('guidance')

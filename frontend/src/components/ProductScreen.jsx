@@ -27,7 +27,7 @@ export default function ProductScreen({ brand, error, selectedProduct, selectedS
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('http://localhost:8000/api/products')
+    fetch((import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/api/products')
       .then(r => r.json())
       .then(data => { setProducts(data); setLoading(false) })
       .catch(() => setLoading(false))
@@ -103,7 +103,7 @@ export default function ProductScreen({ brand, error, selectedProduct, selectedS
               {filtered.map(p => (
                 <div key={p.id} className={`product-card ${selectedProduct?.id === p.id ? 'selected' : ''}`}
                   onClick={() => { onSelectProduct(p); onSelectSize(null) }}>
-                  <ProductImage src={`http://localhost:8000/products/${p.image}`} alt={p.name} />
+                  <ProductImage src={`${import.meta.env.VITE_API_URL || 'http://localhost:8000'}/products/${p.image}`} alt={p.name} />
                   <div className="product-card-info">
                     <h4>{p.name}</h4>
                     <span>{p.price} ₺</span>
