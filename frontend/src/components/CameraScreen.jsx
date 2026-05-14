@@ -89,7 +89,7 @@ export default function CameraScreen({ brand, onComplete, onBack }) {
   }
 
   const hints = [
-    'Kameraya düz bak, kollarını hafifçe aç',
+    'Baştan ayağa tam boy görün — ayakların da çerçevede olsun, dik dur',
   ]
 
   return (
@@ -153,7 +153,7 @@ export default function CameraScreen({ brand, onComplete, onBack }) {
               <>
                 <h2 style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.3px', marginBottom: 4 }}>{STEPS[photos.length].label} Fotoğraf</h2>
                 <div style={{ width: 32, height: 2, background: 'var(--black)', borderRadius: 2, marginBottom: 12 }} />
-                <p style={{ fontSize: 13, color: 'var(--gray)', lineHeight: 1.6 }}>{hints[photos.length]}</p>
+                <p style={{ fontSize: 13, color: 'var(--gray)', lineHeight: 1.6 }}>Baştan ayağa tam boy görün — ayakların da çerçevede olsun, dik dur</p>
               </>
             )}
           </div>
