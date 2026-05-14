@@ -11,19 +11,30 @@ export default function CameraScreen({ brand, onComplete, onBack }) {
   const videoRef = useRef(null)
   const canvasRef = useRef(null)
   const streamRef = useRef(null)
-  const [step, setStep] = useState(0)
-  const [photos, setPhotos] = useState([])       // blob array
-  const [previews, setPreviews] = useState([])    // URL array for display
+  const [photos, setPhotos] = useState([])
+  const [previews, setPreviews] = useState([])
   const [cameraReady, setCameraReady] = useState(false)
   const [cameraFailed, setCameraFailed] = useState(false)
   const [flash, setFlash] = useState(false)
   const [confirmed, setConfirmed] = useState(false)
+  const [facingMode, setFacingMode] = useState('user')
 
   const allDone = photos.length >= STEPS.length
 
   useEffect(() => {
+    startCamera(facingMode)
+    return () => stopCamera()
+  }, [facingMode])
+
+  function stopCamera() {
+    streamRef.current?.getTracks().forEach(t => t.stop())
+  }
+
+  function startCamera(mode) {
+    stopCamera()
+    setCameraReady(false)
     navigator.mediaDevices.getUserMedia({
-      video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 1920 } },
+      video: { facingMode: mode, width: { ideal: 1280 }, height: { ideal: 1920 } },
     }).then(stream => {
       streamRef.current = stream
       if (videoRef.current) {
@@ -31,15 +42,17 @@ export default function CameraScreen({ brand, onComplete, onBack }) {
         videoRef.current.onloadedmetadata = () => setCameraReady(true)
       }
     }).catch(() => setCameraFailed(true))
-    return () => { streamRef.current?.getTracks().forEach(t => t.stop()) }
-  }, [])
+  }
+
+  function flipCamera() {
+    setFacingMode(m => m === 'user' ? 'environment' : 'user')
+  }
 
   function addPhotos(blobs) {
     const newPhotos = [...photos, ...blobs].slice(0, STEPS.length)
     const newPreviews = newPhotos.map(b => URL.createObjectURL(b))
     setPhotos(newPhotos)
     setPreviews(newPreviews)
-    setStep(Math.min(newPhotos.length, STEPS.length - 1))
   }
 
   function capture() {
@@ -66,15 +79,11 @@ export default function CameraScreen({ brand, onComplete, onBack }) {
     const newPreviews = newPhotos.map(b => URL.createObjectURL(b))
     setPhotos(newPhotos)
     setPreviews(newPreviews)
-    setStep(newPhotos.length < STEPS.length ? newPhotos.length : STEPS.length - 1)
   }
 
   function goBack() {
-    if (photos.length > 0) {
-      removePhoto(photos.length - 1)
-    } else {
-      onBack()
-    }
+    if (photos.length > 0) removePhoto(photos.length - 1)
+    else onBack()
   }
 
   function confirm() {
@@ -117,11 +126,17 @@ export default function CameraScreen({ brand, onComplete, onBack }) {
           ) : (
             <>
               <video ref={videoRef} autoPlay playsInline muted />
-              {!allDone && (
-                <>
-                  <div className="camera-overlay"><div className="body-guide" /></div>
-                  <div className="camera-hint-bar">{hints[photos.length]}</div>
-                </>
+              {!allDone && cameraReady && (
+                <div className="camera-hint-bar">{hints[photos.length]}</div>
+              )}
+              {/* Kamera çevirme butonu */}
+              {cameraReady && !allDone && (
+                <button className="flip-camera-btn" onClick={flipCamera} title="Kamerayı çevir">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
+                    <path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/>
+                  </svg>
+                </button>
               )}
             </>
           )}
@@ -130,87 +145,50 @@ export default function CameraScreen({ brand, onComplete, onBack }) {
 
         {/* Sağ — panel */}
         <div className="camera-panel">
-          {/* Başlık */}
           <div>
             <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gray)', marginBottom: 8 }}>
               Fotoğraf Çekimi
             </p>
             {allDone ? (
               <>
-                <h2 style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.3px', marginBottom: 4 }}>
-                  Fotoğraflar Hazır
-                </h2>
+                <h2 style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.3px', marginBottom: 4 }}>Fotoğraflar Hazır</h2>
                 <div style={{ width: 32, height: 2, background: 'var(--black)', borderRadius: 2, marginBottom: 12 }} />
-                <p style={{ fontSize: 13, color: 'var(--gray)', lineHeight: 1.6 }}>
-                  İstersen fotoğrafları değiştir, hazırsan onayla.
-                </p>
+                <p style={{ fontSize: 13, color: 'var(--gray)', lineHeight: 1.6 }}>İstersen fotoğrafları değiştir, hazırsan onayla.</p>
               </>
             ) : (
               <>
-                <h2 style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.3px', marginBottom: 4 }}>
-                  {STEPS[photos.length].label} Fotoğraf
-                </h2>
+                <h2 style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.3px', marginBottom: 4 }}>{STEPS[photos.length].label} Fotoğraf</h2>
                 <div style={{ width: 32, height: 2, background: 'var(--black)', borderRadius: 2, marginBottom: 12 }} />
                 <p style={{ fontSize: 13, color: 'var(--gray)', lineHeight: 1.6 }}>{hints[photos.length]}</p>
               </>
             )}
           </div>
 
-          {/* İlerleme */}
           <div className="step-bar">
             {STEPS.map((s, i) => (
               <div key={s.key} className={`step-bar-item ${i < photos.length ? 'done' : ''}`} />
             ))}
           </div>
 
-          {/* Fotoğraf önizlemeleri */}
           <div className="photo-thumbs">
             {STEPS.map((s, i) => (
               <div key={s.key} style={{ flex: 1, position: 'relative' }}>
                 {previews[i] ? (
                   <>
-                    <img
-                      src={previews[i]}
-                      alt={s.label}
-                      style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 10, display: 'block' }}
-                    />
-                    <button
-                      onClick={() => removePhoto(i)}
-                      style={{
-                        position: 'absolute', top: 4, right: 4,
-                        width: 20, height: 20, borderRadius: '50%',
-                        background: 'rgba(0,0,0,0.6)', color: 'white',
-                        fontSize: 11, fontWeight: 700, display: 'flex',
-                        alignItems: 'center', justifyContent: 'center',
-                        border: 'none', cursor: 'pointer', lineHeight: 1,
-                      }}
-                    >×</button>
+                    <img src={previews[i]} alt={s.label} style={{ width: '100%', aspectRatio: '1', objectFit: 'cover', borderRadius: 10, display: 'block' }} />
+                    <button onClick={() => removePhoto(i)} style={{ position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: 11, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer', lineHeight: 1 }}>×</button>
                   </>
                 ) : (
-                  <div className="photo-thumb" style={{
-                    background: 'var(--gray-light)',
-                    color: 'var(--gray)',
-                    fontSize: 11, fontWeight: 600,
-                  }}>
-                    {i + 1}
-                  </div>
+                  <div className="photo-thumb" style={{ background: 'var(--gray-light)', color: 'var(--gray)', fontSize: 11, fontWeight: 600 }}>{i + 1}</div>
                 )}
-                <p style={{ fontSize: 9, color: 'var(--gray)', textAlign: 'center', marginTop: 4, fontWeight: 600, letterSpacing: 0.5 }}>
-                  {s.label.toUpperCase()}
-                </p>
+                <p style={{ fontSize: 9, color: 'var(--gray)', textAlign: 'center', marginTop: 4, fontWeight: 600, letterSpacing: 0.5 }}>{s.label.toUpperCase()}</p>
               </div>
             ))}
           </div>
 
-          {/* Butonlar */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {allDone ? (
-              <button
-                className="btn-primary"
-                onClick={confirm}
-                disabled={confirmed}
-                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}
-              >
+              <button className="btn-primary" onClick={confirm} disabled={confirmed} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
                 <span style={{ fontSize: 16 }}>✓</span>
                 {confirmed ? 'Gönderiliyor...' : 'Onayla ve Devam Et'}
               </button>
@@ -225,13 +203,7 @@ export default function CameraScreen({ brand, onComplete, onBack }) {
                   <div className={cameraFailed ? 'btn-primary' : 'btn-secondary'} style={{ textAlign: 'center', pointerEvents: 'none' }}>
                     Galeriden Seç {photos.length > 0 ? `(${STEPS.length - photos.length} kaldı)` : `(${STEPS.length} fotoğraf)`}
                   </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    style={{ display: 'none' }}
-                    onChange={handleGallery}
-                  />
+                  <input type="file" accept="image/*" multiple style={{ display: 'none' }} onChange={handleGallery} />
                 </label>
               </>
             )}
