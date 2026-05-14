@@ -9,8 +9,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-import cv2
-import numpy as np
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -45,16 +43,7 @@ async def status():
 @app.post("/api/process-photo")
 async def process_photo(photo: UploadFile = File(...)):
     contents = await photo.read()
-    nparr = np.frombuffer(contents, np.uint8)
-    img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-
-    if img is None:
-        raise HTTPException(status_code=400, detail="Geçersiz görsel")
-
-    img = _crop_head(img)
-
-    _, buffer = cv2.imencode(".jpg", img)
-    b64 = base64.b64encode(buffer).decode()
+    b64 = base64.b64encode(contents).decode()
     return {"processed_image": f"data:image/jpeg;base64,{b64}"}
 
 
@@ -87,7 +76,7 @@ async def try_on(
         loop = asyncio.get_event_loop()
         result_b64 = await loop.run_in_executor(
             executor,
-            lambda: _replicate_tryon(person_tmp, str(garment_path), product.get("description", product["name"]), product.get("category", "ust"))
+            lambda: _tryon(person_tmp, str(garment_path))
         )
         return {"result_url": result_b64}
 
@@ -100,7 +89,7 @@ async def try_on(
             pass
 
 
-def _replicate_tryon(person_path: str, garment_path: str, description: str, category: str = "ust") -> str:
+def _tryon(person_path: str, garment_path: str) -> str:
     import fal_client
     import urllib.request
 
@@ -122,25 +111,3 @@ def _replicate_tryon(person_path: str, garment_path: str, description: str, cate
         img_data = resp.read()
 
     return "data:image/png;base64," + base64.b64encode(img_data).decode()
-
-
-def _crop_head(img: np.ndarray) -> np.ndarray:
-    face_cascade = cv2.CascadeClassifier(
-        cv2.data.haarcascades + "haarcascade_frontalface_default.xml"
-    )
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=4, minSize=(50, 50))
-
-    h = img.shape[0]
-    result = img.copy()
-
-    if len(faces) > 0:
-        fx, fy, fw, fh = max(faces, key=lambda f: f[2] * f[3])
-        cut_y = min(fy + fh + int(fh * 0.4), h)
-    else:
-        cut_y = int(h * 0.22)
-
-    result[:cut_y, :] = [255, 255, 255]
-    return result
-
-
