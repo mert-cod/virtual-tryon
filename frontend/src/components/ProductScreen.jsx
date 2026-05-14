@@ -20,9 +20,37 @@ const SUBCATEGORIES = {
   ],
 }
 
+// Standart beden önerisi (BMI tabanlı)
+const TOP_SIZES    = ['XS', 'S', 'M', 'L', 'XL']
+const BOTTOM_SIZES = ['34', '36', '38', '40', '42']
+
+function recommendSize(height, weight, category) {
+  if (!height || !weight) return null
+  const bmi = weight / ((height / 100) ** 2)
+  if (category === 'alt') {
+    if (bmi < 18.5) return '34'
+    if (bmi < 21)   return '36'
+    if (bmi < 23.5) return '38'
+    if (bmi < 26)   return '40'
+    return '42'
+  }
+  if (bmi < 18.5) return 'XS'
+  if (bmi < 21)   return 'S'
+  if (bmi < 23.5) return 'M'
+  if (bmi < 26)   return 'L'
+  return 'XL'
+}
+
+function sizeDiff(selected, recommended, category) {
+  const arr = category === 'alt' ? BOTTOM_SIZES : TOP_SIZES
+  return arr.indexOf(selected) - arr.indexOf(recommended)
+}
+
 export default function ProductScreen({ brand, products = [], selectedProduct, selectedSize, onSelectProduct, onSelectSize, onTryOn, onBack }) {
   const [category, setCategory] = useState('ust')
   const [subcategory, setSubcategory] = useState('all')
+  const [height, setHeight] = useState('')
+  const [weight, setWeight] = useState('')
 
   function changeCategory(key) {
     setCategory(key)
@@ -43,6 +71,19 @@ export default function ProductScreen({ brand, products = [], selectedProduct, s
     return p.subcategory === subcategory
   })
 
+  const h = parseFloat(height)
+  const w = parseFloat(weight)
+  const recommended = selectedProduct ? recommendSize(h, w, selectedProduct.category) : null
+  const diff = selectedSize && recommended ? sizeDiff(selectedSize, recommended, selectedProduct.category) : 0
+
+  let fitWarning = null
+  if (selectedSize && recommended) {
+    if (diff >= 2) fitWarning = { text: 'Bu beden sana çok dar kalabilir. Yapay zeka kıyafeti vücuduna sıkışmış gösterecek.', color: '#c0392b' }
+    else if (diff === 1) fitWarning = { text: 'Bu beden biraz dar olabilir. Önerilen beden: ' + recommended, color: '#e67e22' }
+    else if (diff === -1) fitWarning = { text: 'Bu beden biraz bol olabilir. Önerilen beden: ' + recommended, color: '#7f8c8d' }
+    else if (diff <= -2) fitWarning = { text: 'Bu beden sana çok bol kalabilir.', color: '#7f8c8d' }
+  }
+
   const canTryOn = selectedProduct && selectedSize
 
   return (
@@ -55,8 +96,6 @@ export default function ProductScreen({ brand, products = [], selectedProduct, s
       <div className="product-layout">
         {/* Sol — ürün grid */}
         <div className="product-grid-area">
-
-          {/* Üst / Alt sekmeler */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <h2 style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-0.5px' }}>Koleksiyon</h2>
             <div className="category-tabs">
@@ -69,7 +108,6 @@ export default function ProductScreen({ brand, products = [], selectedProduct, s
             </div>
           </div>
 
-          {/* Alt kategori filtreleri */}
           <div className="subcategory-bar">
             {SUBCATEGORIES[category].map(s => (
               <button
@@ -104,24 +142,70 @@ export default function ProductScreen({ brand, products = [], selectedProduct, s
 
         {/* Sağ — seçim paneli */}
         <div className="product-panel">
+          {/* Boy / Kilo */}
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gray)', marginBottom: 10 }}>Ölçülerin</p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, color: 'var(--gray)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Boy (cm)</label>
+                <input
+                  type="number"
+                  placeholder="170"
+                  value={height}
+                  onChange={e => setHeight(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 14, fontWeight: 600, outline: 'none', boxSizing: 'border-box', background: 'var(--cream)' }}
+                />
+              </div>
+              <div style={{ flex: 1 }}>
+                <label style={{ fontSize: 11, color: 'var(--gray)', fontWeight: 600, display: 'block', marginBottom: 4 }}>Kilo (kg)</label>
+                <input
+                  type="number"
+                  placeholder="70"
+                  value={weight}
+                  onChange={e => setWeight(e.target.value)}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: 10, border: '1.5px solid var(--border)', fontSize: 14, fontWeight: 600, outline: 'none', boxSizing: 'border-box', background: 'var(--cream)' }}
+                />
+              </div>
+            </div>
+          </div>
+
           {selectedProduct ? (
             <>
               <div>
                 <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: 'var(--gray)', marginBottom: 8 }}>Seçilen Ürün</p>
                 <h2 style={{ fontSize: 20, fontWeight: 900, marginBottom: 4 }}>{selectedProduct.name}</h2>
-                <p style={{ fontSize: 18, color: 'var(--black)', fontWeight: 700, marginBottom: 20 }}>{selectedProduct.price} ₺</p>
+                <p style={{ fontSize: 18, color: 'var(--black)', fontWeight: 700, marginBottom: 16 }}>{selectedProduct.price} ₺</p>
               </div>
 
               <div>
-                <div className="size-label">Beden Seç</div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                  <span className="size-label" style={{ margin: 0 }}>Beden Seç</span>
+                  {recommended && (
+                    <span style={{ fontSize: 11, color: 'var(--gray)', fontWeight: 600 }}>
+                      Önerilen: <strong style={{ color: 'var(--black)' }}>{recommended}</strong>
+                    </span>
+                  )}
+                </div>
                 <div className="size-row">
                   {selectedProduct.sizes.map(s => (
-                    <button key={s} className={`size-btn ${selectedSize === s ? 'active' : ''}`} onClick={() => onSelectSize(s)}>
+                    <button
+                      key={s}
+                      className={`size-btn ${selectedSize === s ? 'active' : ''}`}
+                      onClick={() => onSelectSize(s)}
+                      style={recommended === s && selectedSize !== s ? { borderColor: 'var(--black)', borderWidth: 2 } : {}}
+                    >
                       {s}
+                      {recommended === s && <span style={{ display: 'block', fontSize: 8, marginTop: 1, color: selectedSize === s ? 'inherit' : 'var(--gray)' }}>önerilen</span>}
                     </button>
                   ))}
                 </div>
               </div>
+
+              {fitWarning && (
+                <div style={{ padding: '10px 14px', borderRadius: 10, background: fitWarning.color + '15', border: `1px solid ${fitWarning.color}40`, marginTop: 4 }}>
+                  <p style={{ fontSize: 12, color: fitWarning.color, lineHeight: 1.5, fontWeight: 600 }}>{fitWarning.text}</p>
+                </div>
+              )}
 
               <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <button className={canTryOn ? 'btn-gold' : 'btn-primary'} onClick={onTryOn} disabled={!canTryOn}>
