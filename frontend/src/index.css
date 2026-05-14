@@ -689,3 +689,104 @@ button { cursor: pointer; border: none; outline: none; font-family: inherit; }
   color: #c00;
   margin-bottom: 12px;
 }
+
+/* ── MOBİL (768px altı) ── */
+@media (max-width: 768px) {
+  .header {
+    padding: 0 20px;
+    height: 56px;
+  }
+
+  /* Guidance */
+  .guidance-layout {
+    grid-template-columns: 1fr;
+    min-height: unset;
+  }
+  .guidance-left {
+    padding: 48px 28px;
+    min-height: 55dvh;
+  }
+  .guidance-left-inner { gap: 20px; }
+  .guidance-big-title { font-size: 40px; }
+  .guidance-right {
+    padding: 36px 28px;
+    gap: 16px;
+  }
+
+  /* Camera */
+  .camera-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 55dvh 1fr;
+    min-height: unset;
+  }
+  .camera-main { min-height: 55dvh; }
+  .camera-panel {
+    padding: 24px 20px;
+    gap: 14px;
+  }
+
+  /* Preview */
+  .preview-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 50dvh 1fr;
+    min-height: unset;
+  }
+  .preview-img-area {
+    padding: 24px;
+    min-height: 50dvh;
+  }
+  .preview-panel {
+    padding: 28px 20px;
+    border-left: none;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Products */
+  .product-layout {
+    grid-template-columns: 1fr;
+    min-height: unset;
+  }
+  .product-grid-area {
+    padding: 24px 20px;
+  }
+  .product-panel {
+    border-left: none;
+    border-top: 1px solid var(--border);
+    padding: 24px 20px;
+    min-height: unset;
+  }
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+  }
+
+  /* Result */
+  .result-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: 55dvh 1fr;
+    min-height: unset;
+  }
+  .result-img-wrap { min-height: 55dvh; }
+  .result-panel {
+    padding: 28px 20px;
+    border-left: none;
+    border-top: 1px solid var(--border);
+    justify-content: flex-start;
+  }
+
+  /* Loading */
+  .loading-screen { min-height: calc(100dvh - 56px); }
+
+  /* Error */
+  .error-layout { min-height: calc(100dvh - 56px); padding: 20px; }
+  .error-card { padding: 40px 28px; }
+
+  /* Buttons */
+  .btn-primary, .btn-gold, .btn-secondary {
+    padding: 16px 24px;
+  }
+
+  /* Subcategory */
+  .subcategory-bar { gap: 6px; }
+  .subcategory-btn { padding: 6px 12px; font-size: 11px; }
+}
