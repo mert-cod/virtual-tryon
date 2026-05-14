@@ -14,37 +14,37 @@ const API = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 export default function App() {
   const [screen, setScreen] = useState('guidance')
   const [capturedPhotos, setCapturedPhotos] = useState([])
-  const [processedPhoto, setProcessedPhoto] = useState(null)
+  const [processedPhotos, setProcessedPhotos] = useState([]) // 3 işlenmiş foto
   const [selectedProduct, setSelectedProduct] = useState(null)
   const [selectedSize, setSelectedSize] = useState(null)
-  const [resultUrl, setResultUrl] = useState(null)
+  const [resultUrls, setResultUrls] = useState([]) // 3 sonuç
   const [error, setError] = useState(null)
 
   async function processPhotos(photoBlobs) {
     setScreen('loading-photo')
     setError(null)
     try {
-      const form = new FormData()
-      form.append('photo', photoBlobs[0], 'photo.jpg')
-
-      const controller = new AbortController()
-      const tid = setTimeout(() => controller.abort(), 300000)
-      const res = await fetch(`${API}/api/process-photo`, { method: 'POST', body: form, signal: controller.signal })
-      clearTimeout(tid)
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.detail || `Sunucu hatası (${res.status})`)
-      }
-      const data = await res.json()
-      setProcessedPhoto(data.processed_image)
+      // 3 fotoğrafı paralel işle
+      const results = await Promise.all(photoBlobs.map(async (blob, i) => {
+        const form = new FormData()
+        form.append('photo', blob, `photo${i}.jpg`)
+        const controller = new AbortController()
+        const tid = setTimeout(() => controller.abort(), 300000)
+        const res = await fetch(`${API}/api/process-photo`, { method: 'POST', body: form, signal: controller.signal })
+        clearTimeout(tid)
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          throw new Error(data.detail || `Sunucu hatası (${res.status})`)
+        }
+        const data = await res.json()
+        return data.processed_image
+      }))
+      setProcessedPhotos(results)
       setScreen('preview')
     } catch (e) {
-      const msg = e.name === 'AbortError'
-        ? 'İşlem zaman aşımına uğradı. Backend çalışıyor mu kontrol et.'
-        : e.message
+      const msg = e.name === 'AbortError' ? 'İşlem zaman aşımına uğradı.' : e.message
       setError(msg)
-      setScreen('photo-error')  // kameraya değil, hata ekranına git
+      setScreen('photo-error')
     }
   }
 
@@ -57,22 +57,27 @@ export default function App() {
     setScreen('loading-tryon')
     setError(null)
     try {
-      const form = new FormData()
-      form.append('person_image', processedPhoto)
-      form.append('product_id', selectedProduct.id)
-      form.append('size', selectedSize)
+      // 3 fotoğraf için sırayla try-on yap (paralel yaparsak API limit'e takılır)
+      const urls = []
+      for (let i = 0; i < processedPhotos.length; i++) {
+        const form = new FormData()
+        form.append('person_image', processedPhotos[i])
+        form.append('product_id', selectedProduct.id)
+        form.append('size', selectedSize)
 
-      const controller = new AbortController()
-      const tid = setTimeout(() => controller.abort(), 300000)
-      const res = await fetch(`${API}/api/try-on`, { method: 'POST', body: form, signal: controller.signal })
-      clearTimeout(tid)
+        const controller = new AbortController()
+        const tid = setTimeout(() => controller.abort(), 300000)
+        const res = await fetch(`${API}/api/try-on`, { method: 'POST', body: form, signal: controller.signal })
+        clearTimeout(tid)
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        throw new Error(data.detail || `Sunucu hatası (${res.status})`)
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}))
+          throw new Error(data.detail || `Sunucu hatası (${res.status})`)
+        }
+        const data = await res.json()
+        urls.push(data.result_url)
       }
-      const data = await res.json()
-      setResultUrl(data.result_url)
+      setResultUrls(urls)
       setScreen('result')
     } catch (e) {
       const msg = e.name === 'AbortError' ? 'Giydirme zaman aşımına uğradı. Tekrar dene.' : e.message
@@ -84,10 +89,10 @@ export default function App() {
   function reset() {
     setScreen('guidance')
     setCapturedPhotos([])
-    setProcessedPhoto(null)
+    setProcessedPhotos([])
     setSelectedProduct(null)
     setSelectedSize(null)
-    setResultUrl(null)
+    setResultUrls([])
     setError(null)
   }
 
@@ -102,7 +107,7 @@ export default function App() {
       />
     ),
 
-    'loading-photo': <LoadingScreen message="Fotoğrafın işleniyor..." subtext="İlk çalıştırmada model indiriliyor, 1-2 dakika sürebilir" />,
+    'loading-photo': <LoadingScreen message="Fotoğraflar işleniyor..." subtext="3 fotoğraf işleniyor, biraz bekle." />,
 
     'photo-error': (
       <ErrorScreen
@@ -118,7 +123,7 @@ export default function App() {
     preview: (
       <PreviewScreen
         brand={BRAND}
-        photo={processedPhoto}
+        photo={processedPhotos[0]}
         onConfirm={() => setScreen('products')}
         onRetake={() => { setCapturedPhotos([]); setScreen('camera') }}
       />
@@ -137,7 +142,7 @@ export default function App() {
       />
     ),
 
-    'loading-tryon': <LoadingScreen message="Kıyafet giydiriliyor..." subtext="AI modeli çalışıyor, 1-3 dakika sürebilir. Lütfen bekle." />,
+    'loading-tryon': <LoadingScreen message="Kıyafet giydiriliyor..." subtext="3 açıdan giydiriliyor, 3-5 dakika sürebilir. Lütfen bekle." />,
 
     'tryon-error': (
       <ErrorScreen
@@ -153,7 +158,7 @@ export default function App() {
     result: (
       <ResultScreen
         brand={BRAND}
-        resultUrl={resultUrl}
+        resultUrls={resultUrls}
         product={selectedProduct}
         onTryAnother={() => { setSelectedProduct(null); setSelectedSize(null); setScreen('products') }}
         onReset={reset}

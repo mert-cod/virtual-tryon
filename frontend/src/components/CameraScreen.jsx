@@ -1,10 +1,9 @@
 import { useRef, useEffect, useState } from 'react'
 
 const STEPS = [
-  { key: 'front',    label: 'Önden' },
-  { key: 'back',     label: 'Arkadan' },
-  { key: 'side',     label: 'Yandan' },
-  { key: 'diagonal', label: 'Çaprazdan' },
+  { key: 'front', label: 'Önden' },
+  { key: 'back',  label: 'Arkadan' },
+  { key: 'side',  label: 'Yandan' },
 ]
 
 export default function CameraScreen({ brand, onComplete, onBack }) {
@@ -95,7 +94,6 @@ export default function CameraScreen({ brand, onComplete, onBack }) {
     'Kameraya düz bak, kollarını hafifçe aç',
     'Kameraya sırtını dön, dik dur',
     'Sağ yanını kameraya ver, dik dur',
-    '45 derece açıyla kameraya bak',
   ]
 
   return (
