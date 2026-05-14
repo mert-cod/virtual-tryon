@@ -45,6 +45,7 @@ export default function App() {
           model_image: personUrl,
           garment_image: garmentUrl,
           category: cat,
+          mode: 'quality',
         },
       })
 
