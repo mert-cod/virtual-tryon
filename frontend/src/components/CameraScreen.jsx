@@ -205,7 +205,7 @@ export default function CameraScreen({ brand, onComplete, onBack }) {
 
           <div style={{ marginTop: 'auto', padding: '14px 16px', background: 'var(--cream)', borderRadius: 12, border: '1px solid var(--border)' }}>
             <p style={{ fontSize: 12, color: 'var(--gray)', lineHeight: 1.7 }}>
-              Gizliliğin korunur. Yüzün otomatik kaldırılır, fotoğrafların sunucuya kaydedilmez.
+              Gizliliğin korunur. Fotoğrafların sunucuya kaydedilmez, üçüncü taraflarla paylaşılmaz.
             </p>
           </div>
         </div>

@@ -16,8 +16,8 @@
             <h2 className="screen-title">Fotoğrafı Onayla</h2>
             <div style={{ width: 40, height: 2, background: 'var(--black)', borderRadius: 2, marginBottom: 20 }} />
             <p className="screen-subtitle">
-              Yüz bölgen kaldırıldı ve arka plan temizlendi.
-              Devam etmek için onayla.
+              Fotoğrafın hazır. Devam etmek için onayla,
+              tekrar çekmek istersen geri dön.
             </p>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 'auto' }}>

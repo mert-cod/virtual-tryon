@@ -16,7 +16,6 @@ export default function App() {
   const [photoBlob, setPhotoBlob] = useState(null)
   const [photoDataUrl, setPhotoDataUrl] = useState(null)
   const [selectedProduct, setSelectedProduct] = useState(null)
-  const [selectedSize, setSelectedSize] = useState(null)
   const [resultUrl, setResultUrl] = useState(null)
   const [error, setError] = useState(null)
 
@@ -68,7 +67,6 @@ export default function App() {
     setPhotoBlob(null)
     setPhotoDataUrl(null)
     setSelectedProduct(null)
-    setSelectedSize(null)
     setResultUrl(null)
     setError(null)
   }
@@ -97,11 +95,8 @@ export default function App() {
       <ProductScreen
         brand={BRAND}
         products={PRODUCTS}
-        photo={photoDataUrl}
         selectedProduct={selectedProduct}
-        selectedSize={selectedSize}
         onSelectProduct={setSelectedProduct}
-        onSelectSize={setSelectedSize}
         onTryOn={handleTryOn}
         onBack={() => setScreen('preview')}
       />
@@ -125,7 +120,7 @@ export default function App() {
         brand={BRAND}
         resultUrl={resultUrl}
         product={selectedProduct}
-        onTryAnother={() => { setSelectedProduct(null); setSelectedSize(null); setScreen('products') }}
+        onTryAnother={() => { setSelectedProduct(null); setScreen('products') }}
         onReset={reset}
       />
     ),

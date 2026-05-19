@@ -32,8 +32,8 @@
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {[
-              { n: 1, title: 'Fotoğrafını Ekle', text: 'Kamera ile çek ya da galerinizden yükle. Yüzün otomatik kaldırılır, arka plan beyaza dönüştürülür.' },
-              { n: 2, title: 'Ürünü Seç', text: 'Koleksiyonumuzdan istediğin kıyafeti ve bedeni seç.' },
+              { n: 1, title: 'Fotoğrafını Ekle', text: 'Kamera ile çek ya da galerinizden yükle. Baştan ayağa tam boy, düz bir duruşla fotoğraf çek.' },
+              { n: 2, title: 'Ürünü Seç', text: 'Koleksiyondan beğendiğin kıyafeti seç.' },
               { n: 3, title: 'Sonucu Gör', text: 'Yapay zeka kıyafeti üstüne giydiriyor. Yakınlaştır, incele, karar ver.' },
             ].map(s => (
               <div key={s.n} className="guidance-step">
@@ -48,7 +48,7 @@
 
           <div style={{ marginTop: 'auto', paddingTop: 32, borderTop: '1px solid var(--border)' }}>
             <p style={{ fontSize: 11, color: 'var(--gray)', lineHeight: 1.7 }}>
-              Gizliliğin korunur — yüzün otomatik kaldırılır, fotoğrafların sunucuya kaydedilmez.
+              Gizliliğin korunur — fotoğrafların sunucuya kaydedilmez, üçüncü taraflarla paylaşılmaz.
             </p>
           </div>
         </div>
