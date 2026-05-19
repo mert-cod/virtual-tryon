@@ -15,7 +15,7 @@
               Beğendiğin ürünü satın almadan önce nasıl durduğunu gör.
               İade oranları düşsün, alışveriş deneyimin iyileşsin.
             </p>
-            <button className="btn-gold" style={{ marginTop: 8 }} onClick={onStart}>
+            <button className="btn-gold" style={{ marginTop: 8, width: 'fit-content', padding: '14px 36px' }} onClick={onStart}>
               Başla
             </button>
           </div>
