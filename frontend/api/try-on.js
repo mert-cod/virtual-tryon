@@ -14,16 +14,27 @@ export default async function handler(req, res) {
 
     const blob = Buffer.from(personBase64, 'base64')
     const file = new Blob([blob], { type: personType })
-    const personUrl = await fal.storage.upload(file)
 
-    const result = await fal.subscribe('fal-ai/fashn/v1/try-on', {
-      input: {
-        model_image: personUrl,
-        garment_image: garmentUrl,
-        category: cat,
-        mode: 'quality',
-      },
-    })
+    let personUrl
+    try {
+      personUrl = await fal.storage.upload(file)
+    } catch (uploadErr) {
+      return res.status(500).json({ error: 'Upload hatası: ' + uploadErr.message })
+    }
+
+    let result
+    try {
+      result = await fal.subscribe('fal-ai/fashn/v1/run', {
+        input: {
+          model_image: personUrl,
+          garment_image: garmentUrl,
+          category: cat,
+          mode: 'quality',
+        },
+      })
+    } catch (modelErr) {
+      return res.status(500).json({ error: 'Model hatası: ' + modelErr.message })
+    }
 
     res.json({ result_url: result.data.images[0].url })
   } catch (e) {
