@@ -1,6 +1,6 @@
 import { fal } from '@fal-ai/client'
 
-fal.config({ credentials: process.env.FAL_KEY })
+fal.config({ credentials: process.env.VITE_FAL_KEY || process.env.FAL_KEY })
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).end()
