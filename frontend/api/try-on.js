@@ -24,7 +24,7 @@ export default async function handler(req, res) {
 
     let result
     try {
-      result = await fal.subscribe('fal-ai/fashn/v1/run', {
+      result = await fal.subscribe('fal-ai/fashn/tryon/v1.6', {
         input: {
           model_image: personUrl,
           garment_image: garmentUrl,
