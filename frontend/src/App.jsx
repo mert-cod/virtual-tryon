@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { fal } from '@fal-ai/client'
 import './index.css'
 import GuidanceScreen from './components/GuidanceScreen'
 import CameraScreen from './components/CameraScreen'
@@ -11,8 +10,6 @@ import ErrorScreen from './components/ErrorScreen'
 import PRODUCTS from './products'
 
 const BRAND = 'MARKA'
-
-fal.config({ credentials: import.meta.env.VITE_FAL_KEY })
 
 export default function App() {
   const [screen, setScreen] = useState('guidance')
@@ -35,21 +32,30 @@ export default function App() {
     setScreen('loading-tryon')
     setError(null)
     try {
-      const cat = selectedProduct.category === 'alt' ? 'bottoms' : 'tops'
       const garmentUrl = window.location.origin + selectedProduct.image
 
-      const personUrl = await fal.storage.upload(photoBlob)
-
-      const result = await fal.subscribe('fal-ai/fashn/v1/try-on', {
-        input: {
-          model_image: personUrl,
-          garment_image: garmentUrl,
-          category: cat,
-          mode: 'quality',
-        },
+      const personBase64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = e => resolve(e.target.result.split(',')[1])
+        reader.onerror = reject
+        reader.readAsDataURL(photoBlob)
       })
 
-      setResultUrl(result.data.images[0].url)
+      const res = await fetch('/api/try-on', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          personBase64,
+          personType: photoBlob.type || 'image/jpeg',
+          garmentUrl,
+          category: selectedProduct.category,
+        }),
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Sunucu hatası')
+
+      setResultUrl(data.result_url)
       setScreen('result')
     } catch (e) {
       setError(e.message || 'Bir hata oluştu.')
